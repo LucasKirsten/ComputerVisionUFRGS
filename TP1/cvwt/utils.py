@@ -25,7 +25,7 @@ def _get_cols(x):
     return [x[:, i] for i in range(x.shape[1])]
 
 
-def _plot_wavelet2d(A, D, title=''):
+def _plot_wavelet2d(A, D, title='', cmap=None):
     """
     Plot 2D Wavelet Transform results.
 
@@ -41,16 +41,16 @@ def _plot_wavelet2d(A, D, title=''):
     """
     fig, axs = plt.subplots(2, 2, figsize=(10, 10))
     fig.suptitle(title)
-    axs[0][0].imshow(A)
+    axs[0][0].imshow(A, cmap=cmap)
     axs[0][0].set_title('LL')
 
-    axs[0][1].imshow(D[0])
+    axs[0][1].imshow(D[0], cmap=cmap)
     axs[0][1].set_title('LH')
 
-    axs[1][0].imshow(D[1])
+    axs[1][0].imshow(D[1], cmap=cmap)
     axs[1][0].set_title('HL')
 
-    axs[1][1].imshow(D[2])
+    axs[1][1].imshow(D[2], cmap=cmap)
     axs[1][1].set_title('HH')
 
 
