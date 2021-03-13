@@ -6,10 +6,9 @@ from .utils import _plot_wavelet2d as plot_dwt2
 
 import numpy as np
 
+
 def dwt(x, J=1, c=None, d=None, wavelet='haar'):
-    
-    '''
-    
+    """
     1D Wavelet Transform.
 
     Parameters
@@ -32,25 +31,23 @@ def dwt(x, J=1, c=None, d=None, wavelet='haar'):
     Dj : list<np.array>
         Detail coefficients.
 
-    '''
-    
-    assert J>0, 'J should be greater than 0!'
-    
+    """
+    assert J > 0, 'J should be greater than 0!'
+
     if c and d:
         wavelet = [c, d]
-    
+
     Dj = []
     cA = np.copy(x)
     for j in range(J):
-        cA,cD = wavelet_1d(cA, wavelet=wavelet)
+        cA, cD = wavelet_1d(cA, wavelet=wavelet)
         Dj.append(cD)
-        
+
     return cA, Dj
-    
+
+
 def idwt(cA, cD, f=None, g=None, wavelet='haar'):
-    
-    '''
-    
+    """
     1D Inverse Wavelet Transform.
 
     Parameters
@@ -71,22 +68,18 @@ def idwt(cA, cD, f=None, g=None, wavelet='haar'):
     cA : np.array
         Inverse signal.
 
-    '''
-    
+    """
     if f and g:
         wavelet = [f, g]
-        
+
     for j, dj in enumerate(reversed(cD)):
         cA = inv_wavelet_1d(cA, dj, wavelet=wavelet)
-        
+
     return cA
-    
+
+
 def dwt2(x, J=1, c=None, d=None, wavelet='haar'):
-    
-    assert J>0, 'J should be greater than 0!'
-    
-    '''
-    
+    """
     2D Wavelet Transform.
 
     Parameters
@@ -109,23 +102,23 @@ def dwt2(x, J=1, c=None, d=None, wavelet='haar'):
     Dj : list<np.array>
         Detail coefficients.
 
-    '''
-    
+    """
+    assert J > 0, 'J should be greater than 0!'
+
     if c and d:
         wavelet = [c, d]
-    
+
     Dj = []
     cA = np.copy(x)
     for j in range(J):
-        cA,cD = wavelet_2d(cA, wavelet=wavelet)
+        cA, cD = wavelet_2d(cA, wavelet=wavelet)
         Dj.append(cD)
-    
+
     return cA, Dj
-    
+
+
 def idwt2(cA, cD, f=None, g=None, wavelet='haar'):
-    
-    '''
-    
+    """
     2D Inverse Wavelet Transform.
 
     Parameters
@@ -146,12 +139,11 @@ def idwt2(cA, cD, f=None, g=None, wavelet='haar'):
     cA : np.array
         Inverse signal.
 
-    '''
-    
+    """
     if f and g:
         wavelet = [f, g]
-        
+
     for j, dj in enumerate(reversed(cD)):
         cA = inv_wavelet_2d(cA, dj, wavelet=wavelet)
-        
+
     return cA
