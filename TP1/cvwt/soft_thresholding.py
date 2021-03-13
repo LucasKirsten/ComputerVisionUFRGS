@@ -28,9 +28,9 @@ def apply_soft_thresholding(x, wavelet='haar', J=1, t=0, use_pywavelet=False):
 
     Parameters
     ----------
-    x : np.array
+    x : numpy.ndarray
         Input signal.
-    wavelet : str or list<np.array>, optional
+    wavelet : str or list<numpy.ndarray>, optional
         Wavelet filter to be used. The default is haar.
     J : int, optional
         Maximum decomposition level. The default is 1.
@@ -41,7 +41,7 @@ def apply_soft_thresholding(x, wavelet='haar', J=1, t=0, use_pywavelet=False):
 
     Returns
     -------
-    cA : np.array
+    cA : numpy.ndarray
         Smooth Thresholded signal.
 
     """

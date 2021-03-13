@@ -31,9 +31,9 @@ def _plot_wavelet2d(A, D, title='', cmap=None):
 
     Parameters
     ----------
-    A : list<np.array>
+    A : list<numpy.ndarray>
         List of smooth signals.
-    D : list<np.array>
+    D : list<numpy.ndarray>
         List of detail coefficients.
     title : str, optional
         Plot title. The default is \'\'.
@@ -58,14 +58,14 @@ def _upsample(x, ratio=2):
     """
     Parameters
     ----------
-    x : np.array
+    x : numpy.ndarray
         Input signal.
     ratio : int, optional
         Upsample ratio. The default is 2.
 
     Returns
     -------
-    y : np.array
+    y : numpy.ndarray
         Upsampled signal.
 
     """

@@ -13,22 +13,22 @@ def dwt(x, J=1, c=None, d=None, wavelet='haar'):
 
     Parameters
     ----------
-    x : np.array
+    x : numpy.ndarray
         Input signal.
     J : int, optional
         Maximum decomposition level. The default is 1.
-    c : np.array, optional
+    c : numpy.ndarray, optional
         Low pass filter to be used. The default is None.
-    d : np.array, optional
+    d : numpy.ndarray, optional
         High pass filter to be used. The default is None.
     wavelet : str, optional
         Wavelet filter to be used. The default is haar.
 
     Returns
     -------
-    cA : np.array
+    cA : numpy.ndarray
         Smooth signal.
-    Dj : list<np.array>
+    Dj : list<numpy.ndarray>
         Detail coefficients.
 
     """
@@ -52,20 +52,20 @@ def idwt(cA, cD, f=None, g=None, wavelet='haar'):
 
     Parameters
     ----------
-    cA : np.array
+    cA : numpy.ndarray
         Input signal.
-    cD : list<np.array>
+    cD : list<numpy.ndarray>
         List of detail coefficient for each level of decomposition.
-    f : np.array, optional
+    f : numpy.ndarray, optional
         Low pass filter to be used. The default is None.
-    g : np.array, optional
+    g : numpy.ndarray, optional
         High pass filter to be used. The default is None.
     wavelet : str, optional
         Wavelet filter to be used. The default is haar.
 
     Returns
     -------
-    cA : np.array
+    cA : numpy.ndarray
         Inverse signal.
 
     """
@@ -84,22 +84,22 @@ def dwt2(x, J=1, c=None, d=None, wavelet='haar'):
 
     Parameters
     ----------
-    x : np.array
+    x : numpy.ndarray
         Input signal.
     J : int, optional
         Maximum decomposition level. The default is 1.
-    c : np.array, optional
+    c : numpy.ndarray, optional
         Low pass filter to be used. The default is None.
-    d : np.array, optional
+    d : numpy.ndarray, optional
         High pass filter to be used. The default is None.
     wavelet : str, optional
         Wavelet filter to be used. The default is haar.
 
     Returns
     -------
-    cA : np.array
+    cA : numpy.ndarray
         Smooth signal.
-    Dj : list<np.array>
+    Dj : list<numpy.ndarray>
         Detail coefficients.
 
     """
@@ -123,20 +123,20 @@ def idwt2(cA, cD, f=None, g=None, wavelet='haar'):
 
     Parameters
     ----------
-    cA : np.array
+    cA : numpy.ndarray
         Input signal.
-    cD : list<np.array>
+    cD : list<numpy.ndarray>
         List of detail coefficient for each level of decomposition.
-    f : np.array, optional
+    f : numpy.ndarray, optional
         Low pass filter to be used. The default is None.
-    g : np.array, optional
+    g : numpy.ndarray, optional
         High pass filter to be used. The default is None.
     wavelet : str, optional
         Wavelet filter to be used. The default is haar.
 
     Returns
     -------
-    cA : np.array
+    cA : numpy.ndarray
         Inverse signal.
 
     """

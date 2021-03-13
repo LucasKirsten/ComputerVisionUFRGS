@@ -44,11 +44,11 @@ def compact_image(x, alpha, wavelet='haar', J=1, use_pywavelet=False):
 
     Parameters
     ----------
-    x : np.array
+    x : numpy.ndarray
         Input signal.
     alpha : float ranging from (0, 1]
         Percentage of low gradients to remove from detail coefficients.
-    wavelet : str or list<np.array>, optional
+    wavelet : str or list<numpy.ndarray>, optional
         Wavelet filter to be used. The default is haar.
     J : int, optional
         Maximum decomposition level. The default is 1.
@@ -57,11 +57,11 @@ def compact_image(x, alpha, wavelet='haar', J=1, use_pywavelet=False):
 
     Returns
     -------
-    [cA] : list<np.array>
+    [cA] : list<numpy.ndarray>
         Intermidiate smooth signals.
-    Dj : list<np.array>
+    Dj : list<numpy.ndarray>
         Detail coefficients.
-    cA : np.array
+    cA : numpy.ndarray
         Final smooth signal.
 
     """
