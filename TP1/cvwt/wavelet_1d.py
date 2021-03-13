@@ -10,8 +10,24 @@ from .utils import _upsample, _get_haar
 
 
 def wavelet_1d(x, wavelet='haar'):
-    # TODO: add doc
+    """
+    Applies the 1D Wavelet Transform based on a given signal.
 
+    Parameters
+    ----------
+    x : numpy.ndarray
+        Input signal.
+    wavelet : str or list<numpy.ndarray>, optional
+        Wavelet filter to be used. The default is haar.
+
+    Returns
+    -------
+    cA : numpy.ndarray
+        Approximation coefficients
+    cD : numpy.ndarray
+        Detail coefficients
+
+    """
     if wavelet == 'haar':
         c, d, f, g = _get_haar()
     elif type(wavelet) == list:
@@ -24,15 +40,31 @@ def wavelet_1d(x, wavelet='haar'):
     y1 = np.convolve(x, d)
 
     # downsize
-    v0 = y0[1::2]
-    v1 = y1[1::2]
+    cA = y0[1::2]
+    cD = y1[1::2]
 
-    return v0, v1
+    return cA, cD
 
 
 def inv_wavelet_1d(x, D, wavelet='haar'):
-    # TODO: add doc
+    """
+    Applies the 1D Inverse Wavelet Transform based on the coefficients.
 
+    Parameters
+    ----------
+    x : numpy.ndarray
+        Input signal (approximation coefficients)
+    D :
+        Detail coefficients
+    wavelet : str or list<numpy.ndarray>, optional
+        Wavelet filter to be used. The default is haar.
+
+    Returns
+    -------
+    w : numpy.ndarray
+        The reconstructed signal
+
+    """
     if wavelet == 'haar':
         c, d, f, g = _get_haar()
     elif type(wavelet) == list:

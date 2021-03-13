@@ -14,8 +14,24 @@ from .utils import _get_rows, _get_cols, _plot_wavelet2d
 
 
 def wavelet_2d(x, wavelet='haar'):
-    # TODO: add doc
+    """
+    Applies the 2D Wavelet Transform based on a given signal.
 
+    Parameters
+    ----------
+    x : numpy.array
+        Input signal.
+    wavelet : str or list<numpy.array>, optional
+        Wavelet filter to be used. The default is haar.
+
+    Returns
+    -------
+    LL : numpy.ndarray
+        Approximation coefficients
+    (LH, HL, HH) : tuple(numpy.ndarray, numpy.ndarray, numpy.ndarray)
+        Detail coefficients
+
+    """
     # convert to gray scale
     if len(x.shape) > 2:
         x = np.mean(x, axis=-1)
@@ -36,7 +52,7 @@ def wavelet_2d(x, wavelet='haar'):
     wac = np.stack(map(_wavelet1d, a_cols), axis=-1)
     wdc = np.stack(map(_wavelet1d, d_cols), axis=-1)
 
-    # split componenets
+    # split components
     HL, HH = wdc[0], wdc[1]
     LL, LH = wac[0], wac[1]
 
@@ -44,8 +60,24 @@ def wavelet_2d(x, wavelet='haar'):
 
 
 def inv_wavelet_2d(x, D, wavelet='haar'):
-    # TODO: add doc
+    """
+    Applies the 2D Inverse Wavelet Transform based on the coefficients.
 
+    Parameters
+    ----------
+    x : numpy.ndarray
+        Input signal (approximation coefficients)
+    D :
+        Detail coefficients
+    wavelet : str or list<numpy.ndarray>, optional
+        Wavelet filter to be used. The default is haar.
+
+    Returns
+    -------
+    inverse : numpy.ndarray
+        The reconstructed signal
+
+    """
     # aliases
     LL, (LH, HL, HH) = x, D
 
