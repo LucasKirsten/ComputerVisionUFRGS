@@ -5,9 +5,25 @@ Created on Wed Mar  3 15:35:28 2021
 @author: kirstenl
 """
 
+import pywt
 import matplotlib.pyplot as plt
 import numpy as np
 
+def _remove_borders(x, size=None, num=None):
+    """
+    Remove border on the input signal.
+    If size is given, the function return x with the shape=size
+    If num is given, it is removed (num/2) from both sides of x
+
+    """
+    if size:
+        num = len(x)-int(size)
+        
+    init = int(np.floor(num/2))
+    end  = int(-np.ceil(num/2))
+    if end==0: end = len(x)
+        
+    return x[init:end]
 
 def _get_rows(x):
     """
@@ -25,7 +41,7 @@ def _get_cols(x):
     return [x[:, i] for i in range(x.shape[1])]
 
 
-def _plot_wavelet2d(A, D, title='', cmap=None):
+def _plot_wavelet2d(A, D, cmap=None):
     """
     Plot 2D Wavelet Transform results.
 
@@ -35,23 +51,29 @@ def _plot_wavelet2d(A, D, title='', cmap=None):
         List of smooth signals.
     D : list<numpy.ndarray>
         List of detail coefficients.
-    title : str, optional
-        Plot title. The default is \'\'.
 
     """
-    fig, axs = plt.subplots(2, 2, figsize=(10, 10))
-    fig.suptitle(title)
-    axs[0][0].imshow(A, cmap=cmap)
-    axs[0][0].set_title('LL')
+    
+    if len(A.shape)>2:
+        channels = A.shape[-1]
+    else:
+        channels = 1
+        A = A[..., np.newaxis]
+    
+    for ch in range(channels):
+        fig, axs = plt.subplots(2, 2, figsize=(10, 10))
+        fig.suptitle(f'Channel: {ch}')
+        axs[0][0].imshow(A[...,ch], cmap=cmap)
+        axs[0][0].set_title('LL')
 
-    axs[0][1].imshow(D[0], cmap=cmap)
-    axs[0][1].set_title('LH')
+        axs[0][1].imshow(D[0][...,ch], cmap=cmap)
+        axs[0][1].set_title('LH')
 
-    axs[1][0].imshow(D[1], cmap=cmap)
-    axs[1][0].set_title('HL')
+        axs[1][0].imshow(D[1][...,ch], cmap=cmap)
+        axs[1][0].set_title('HL')
 
-    axs[1][1].imshow(D[2], cmap=cmap)
-    axs[1][1].set_title('HH')
+        axs[1][1].imshow(D[2][...,ch], cmap=cmap)
+        axs[1][1].set_title('HH')
 
 
 def _upsample(x, ratio=2):
@@ -75,14 +97,14 @@ def _upsample(x, ratio=2):
     return y
 
 
-def _get_haar():
+def _get_filters(wavelet):
     """
-    Return haar filters.
+    Return filters for wavelet family.
 
     """
-    c = 1 / np.sqrt(2) * np.array([1., 1.])
-    d = 1 / np.sqrt(2) * np.array([-1., 1.])
-    f = 1 / np.sqrt(2) * np.array([1., 1.])
-    g = 1 / np.sqrt(2) * np.array([1., -1.])
+    try:
+        wavelet = pywt.Wavelet(wavelet)
+    except:
+        raise Exception('Not a valid wavelet! Choose among: ', pywt.wavelist())
 
-    return c, d, f, g
+    return [np.array(f) for f in wavelet.filter_bank]
