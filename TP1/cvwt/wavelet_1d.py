@@ -6,7 +6,7 @@ Created on Wed Mar  3 15:36:22 2021
 """
 
 import numpy as np
-from .utils import _upsample, _get_haar
+from .utils import _upsample, _get_filters, _remove_borders
 
 
 def wavelet_1d(x, wavelet='haar'):
@@ -28,8 +28,8 @@ def wavelet_1d(x, wavelet='haar'):
         Detail coefficients
 
     """
-    if wavelet == 'haar':
-        c, d, f, g = _get_haar()
+    if type(wavelet) == str:
+        c, d, f, g = _get_filters(wavelet)
     elif type(wavelet) == list:
         c, d = wavelet
     else:
@@ -38,7 +38,7 @@ def wavelet_1d(x, wavelet='haar'):
     # convolve filters
     y0 = np.convolve(x, c)
     y1 = np.convolve(x, d)
-
+    
     # downsize
     cA = y0[1::2]
     cD = y1[1::2]
@@ -65,26 +65,29 @@ def inv_wavelet_1d(x, D, wavelet='haar'):
         The reconstructed signal
 
     """
-    if wavelet == 'haar':
-        c, d, f, g = _get_haar()
+    if type(wavelet) == str:
+        c, d, f, g = _get_filters(wavelet)
     elif type(wavelet) == list:
         f, g = wavelet
     else:
         raise Exception('Not a valid wavelet!')
-
-    # eliminate extra zero due convolution
-    if len(x) > len(D):
-        x = x[:-1]
+        
+    # remove borders due convolution to match sizes
+    if len(x)!=len(D):
+        x = _remove_borders(x, size=len(D))
 
     # upsample
     u0 = _upsample(x)
     u1 = _upsample(D)
 
     # convolve filters
-    w0 = np.convolve(u0, f)[:-1]
-    w1 = np.convolve(u1, g)[:-1]
+    w0 = np.convolve(u0, f, 'same')
+    w1 = np.convolve(u1, g, 'same')
 
     w = w0 + w1
+    
+    # remove border to match expected output shape
+    w = _remove_borders(w, num=len(f)-2)
 
     return w
 
