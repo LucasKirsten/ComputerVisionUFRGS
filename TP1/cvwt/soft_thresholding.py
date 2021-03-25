@@ -22,7 +22,7 @@ def _soft_thresholding(x, t):
     return np.sign(x) * np.where(xx >= 0, xx, 0)
 
 
-def apply_soft_thresholding(x, J=1, t=0, wavelet='haar'):
+def apply_soft_thresholding(x, J=1, t=None, alpha=None, wavelet='haar'):
     """
     Apply soft thresholding in 2D input image using Wavelet Transform.
 
@@ -34,8 +34,10 @@ def apply_soft_thresholding(x, J=1, t=0, wavelet='haar'):
         Wavelet filter to be used. The default is haar.
     J : int, optional
         Maximum decomposition level. The default is 1.
-    t : int, optional
-        Valeu to be subtracted from soft thresholding function. The default value is 0.
+    t : float
+        Valeu to be subtracted from detail coefficients. The default value is None. t or alpha should be defined!
+    alpha : float
+        Ratio of the maximum values to be subtracted from the detail coefficients. The default value is None. t or alpha should be defined!
 
     Returns
     -------
@@ -45,6 +47,7 @@ def apply_soft_thresholding(x, J=1, t=0, wavelet='haar'):
     """
     
     assert J > 0, 'J should be greater than 0'
+    assert t is not None or alpha is not None, 't or alpha value should be defined!'
 
     # going forward in the wavelet transform
     Dj = []
@@ -53,6 +56,8 @@ def apply_soft_thresholding(x, J=1, t=0, wavelet='haar'):
         cA, cD = dwt2(cA, wavelet=wavelet)
 
         # apply soft threhsolding and save detail coefficients
+        if alpha:
+            t = alpha*np.max(np.abs(cD))
         cD = _soft_thresholding(cD, t)
         Dj.append(cD)
 
@@ -60,7 +65,7 @@ def apply_soft_thresholding(x, J=1, t=0, wavelet='haar'):
     for j, dj in enumerate(reversed(Dj)):
         cA = idwt2(cA, dj, wavelet=wavelet)
 
-    return cA.astype(x.dtype)
+    return cA.astype(x.dtype).reshape(x.shape)
 
 
 if __name__ == '__main__':
