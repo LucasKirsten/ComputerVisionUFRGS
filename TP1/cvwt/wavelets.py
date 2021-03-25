@@ -25,7 +25,7 @@ def dwt(x, J=1, c=None, d=None, wavelet='haar'):
     Returns
     -------
     cA : numpy.ndarray
-        Smooth signal.
+        Approximation signal.
     Dj : list<numpy.ndarray>
         Detail coefficients.
 
@@ -101,7 +101,7 @@ def dwt2(x, J=1, c=None, d=None, wavelet='haar'):
     Returns
     -------
     cA : numpy.ndarray
-        Smooth signal.
+        Approximation signal.
     Dj : list<numpy.ndarray>
         Detail coefficients.
 
@@ -192,5 +192,8 @@ def idwt2(cA, cD, f=None, g=None, wavelet='haar'):
         inv.append(aa)
         
     inv = np.stack(inv, axis=-1)
-
+    
+    # remove last channel if single color
+    if inv.shape[-1]==1:
+        inv = inv[...,0]
     return inv
