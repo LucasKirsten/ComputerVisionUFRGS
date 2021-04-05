@@ -133,3 +133,6 @@ dmypy.json
 *.zip
 *.iml
 *.xml
+*.png
+
+/TF/data
