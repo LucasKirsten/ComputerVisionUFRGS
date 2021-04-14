@@ -163,7 +163,7 @@ class UNetVgg(torch.nn.Module):
         # return self.final(end0)
 
     @staticmethod
-    def eval_net_with_loss(model, inp, gt, class_weights, device):
+    def eval_net_with_loss(model, batch, class_weights, device):
         """
         Evaluate network including loss.
         
@@ -179,17 +179,21 @@ class UNetVgg(torch.nn.Module):
             loss (torch.tensor): Tensor with the total loss.
                 
         """
+        images = batch['image'].to(device)
+        gt = batch['gt'].to(device)
+
         weights = torch.from_numpy(np.array(class_weights, dtype=np.float32)).to(device)
-        out, aux_out = model(inp)
+        out, aux_out = model(images)
 
         softmax = torch.nn.functional.log_softmax(out, dim=1)
-        loss = torch.nn.functional.nll_loss(softmax, gt, ignore_index=-1, weight=weights)
-
         softmax_aux = torch.nn.functional.log_softmax(aux_out, dim=1)
+
+        loss = torch.nn.functional.nll_loss(softmax, gt, ignore_index=-1, weight=weights)
         loss_aux = torch.nn.functional.nll_loss(softmax_aux, gt, ignore_index=-1, weight=weights)
 
         total_loss = loss * 0.6 + loss_aux * 0.4
         return out, total_loss
+        # return out, loss
 
     @staticmethod
     def get_params_by_kind(model, n_base=7):
@@ -205,28 +209,28 @@ class UNetVgg(torch.nn.Module):
 
                 if vgglayer <= n_base:
                     if 'bias' in name:
-                        print('Adding %s to base vgg bias.' % (name))
+                        print('Adding %s to base vgg bias.' % name)
                         base_vgg_bias.append(param)
                     else:
                         base_vgg_weight.append(param)
-                        print('Adding %s to base vgg weight.' % (name))
+                        print('Adding %s to base vgg weight.' % name)
                 else:
                     if 'bias' in name:
-                        print('Adding %s to core bias.' % (name))
+                        print('Adding %s to core bias.' % name)
                         core_bias.append(param)
                     else:
-                        print('Adding %s to core weight.' % (name))
+                        print('Adding %s to core weight.' % name)
                         core_weight.append(param)
 
-            elif ('weight' in name or 'bias' in name):
+            elif 'weight' in name or 'bias' in name:
                 if 'bias' in name:
-                    print('Adding %s to core bias.' % (name))
+                    print('Adding %s to core bias.' % name)
                     core_bias.append(param)
                 else:
-                    print('Adding %s to core weight.' % (name))
+                    print('Adding %s to core weight.' % name)
                     core_weight.append(param)
 
-        return (base_vgg_weight, base_vgg_bias, core_weight, core_bias)
+        return base_vgg_weight, base_vgg_bias, core_weight, core_bias
 
     def init_params(self):
         #        self.init_params_(self.vgg4, False)
@@ -270,5 +274,3 @@ class UNetVgg(torch.nn.Module):
                     init.normal_(m.weight, std=1e-3)
                     if m.bias is not None:
                         init.constant_(m.bias, 0)
-
-                    # End class
