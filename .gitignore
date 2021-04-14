@@ -137,3 +137,5 @@ dmypy.json
 
 /TF/data
 /TF/unet
+/TF/checkpoints
+/TF/board*
