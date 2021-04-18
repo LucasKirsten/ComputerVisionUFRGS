@@ -1,0 +1,7 @@
+- Define best HxW to be used: 252x252 (min value of heights and widths to avoid noises when upsampling images)
+
+- Simple workflow with otsu threshold: 0.7412623405275705+-0.24912489787937545
+
+- Filter ery segmentations:
+-- Hough circles X
+-- Blob detection X
