@@ -5,7 +5,7 @@ from utils import pt_utils, plot_utils
 from dataset import BacteriaDataset
 from utils.train_utils import Trainer
 from torch.utils.data import DataLoader
-from apex import amp
+# from apex import amp
 
 
 # Hyperparameters etc.
@@ -25,13 +25,13 @@ PLOT_DATA = True
 AUGMENT_IMG = False
 WORKING_PATH = "/home/diego.jardim/Projects/ufrgs/tf"
 SAVE_DIR = "/".join([WORKING_PATH, "save_images"])
-WRITER_PATH = "/".join([WORKING_PATH, "board_v2"])
+WRITER_PATH = "/".join([WORKING_PATH, "board_test"])
 TRAIN_DIR = "/media/HD/datasets/bacteria_segmentation/train"
 VAL_DIR = "/media/HD/datasets/bacteria_segmentation/val"
 TEST_DIR = "/media/HD/datasets/bacteria_segmentation/test"
 BATCHES_PER_UPDATE = 8
 CLASS_WEIGHTS = [0.1, 0.55, 1] # [0.1, 0.4, 1]
-CHECKPOINT_PATH = "/".join([WORKING_PATH, "checkpoints", "unet_vgg_v2.pth"])
+CHECKPOINT_PATH = "/".join([WORKING_PATH, "checkpoints", "unet_vgg_test.pth"])
 
 
 def get_loaders(train_dir, val_dir, test_dir, batch_size, seed, num_workers=4, pin_memory=True):
@@ -98,9 +98,10 @@ if __name__ == "__main__":
     model.to(DEVICE)
 
     # Optimization hyperparameters
+    scaler = torch.cuda.amp.GradScaler()
     optimizer = get_optimizer(model)
     lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', patience=20, verbose=True)
-    model, optimizer = amp.initialize(model, optimizer, opt_level='O0')
+    # model, optimizer = amp.initialize(model, optimizer, opt_level='O0')
 
     if PLOT_DATA:
         plot_utils.plot_data(train_loader, 1, "TRAIN SAMPLE")
@@ -114,7 +115,8 @@ if __name__ == "__main__":
                       optimizer=optimizer,
                       lr_scheduler=lr_scheduler,
                       device=DEVICE,
-                      writer_path=WRITER_PATH)
+                      writer_path=WRITER_PATH,
+                      scaler=scaler)
 
     for epoch in range(NUM_EPOCHS):
         print('\nEpoch %d starting...' % epoch)

@@ -1,7 +1,7 @@
 import torch
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
-from apex import amp
+# from apex import amp
 from utils import plot_utils
 from utils.converters import Converters
 
@@ -70,7 +70,7 @@ def get_iou(loader, metrics_dict, mean_loss, n_correct, n_false, is_train=True, 
 
 
 class Trainer:
-    def __init__(self, model, train_loader, val_loader, test_loader, optimizer, lr_scheduler, device, writer_path):
+    def __init__(self, model, train_loader, val_loader, test_loader, optimizer, lr_scheduler, device, writer_path, scaler):
         self.test_loader = test_loader
         self.model = model
         self.train_loader = train_loader
@@ -80,6 +80,7 @@ class Trainer:
         self.device = device
         self.writer = SummaryWriter(log_dir=writer_path)
         self.batches_per_update = 8
+        self.scaler = scaler
 
     def train(self, class_weights, epoch):
         self.model.train()
@@ -88,7 +89,7 @@ class Trainer:
         n_correct = 0
         n_false = 0
 
-        train_metrics = {'pixelwise_acc': 0, 'mean_iou': 0}
+        train_metrics = {'mean_iou': 0}
         for key, val in converters.get_class_to_id().items():
             train_metrics[key + '_iou'] = 0
             train_metrics[key + '_samples'] = 0
@@ -99,11 +100,14 @@ class Trainer:
                                                                class_weights=class_weights,
                                                                device=self.device)
 
-            with amp.scale_loss(total_loss, self.optimizer) as scaled_loss:
-                scaled_loss.backward()
+            # with amp.scale_loss(total_loss, self.optimizer) as scaled_loss:
+            #     scaled_loss.backward()
+            # self.optimizer.step()
 
-            self.optimizer.step()
             self.optimizer.zero_grad()
+            self.scaler.scale(total_loss).backward()
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
 
             mean_loss += total_loss.cpu().detach().numpy()
             label_out = torch.nn.functional.softmax(output, dim=1)
@@ -141,7 +145,7 @@ class Trainer:
         n_false = 0
         mean_loss = 0.0
 
-        val_metrics = {'pixelwise_acc': 0, 'mean_iou': 0}
+        val_metrics = {'mean_iou': 0}
         for key, val in converters.get_class_to_id().items():
             val_metrics[key + '_iou'] = 0
             val_metrics[key + '_samples'] = 0
@@ -192,7 +196,7 @@ class Trainer:
         n_false = 0
         mean_loss = 0.0
 
-        test_metrics = {'pixelwise_acc': 0, 'mean_iou': 0}
+        test_metrics = {'mean_iou': 0}
         for key, val in converters.get_class_to_id().items():
             test_metrics[key + '_iou'] = 0
             test_metrics[key + '_samples'] = 0
