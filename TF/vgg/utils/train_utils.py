@@ -1,7 +1,6 @@
 import torch
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
-# from apex import amp
 from utils import plot_utils
 from utils.converters import Converters
 
@@ -100,14 +99,17 @@ class Trainer:
                                                                class_weights=class_weights,
                                                                device=self.device)
 
-            # with amp.scale_loss(total_loss, self.optimizer) as scaled_loss:
-            #     scaled_loss.backward()
-            # self.optimizer.step()
-
             self.optimizer.zero_grad()
-            self.scaler.scale(total_loss).backward()
-            self.scaler.step(self.optimizer)
-            self.scaler.update()
+
+            if self.scaler is None:
+                from apex import amp
+                with amp.scale_loss(total_loss, self.optimizer) as scaled_loss:
+                    scaled_loss.backward()
+                    self.optimizer.step()
+            else:
+                self.scaler.scale(total_loss).backward()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
 
             mean_loss += total_loss.cpu().detach().numpy()
             label_out = torch.nn.functional.softmax(output, dim=1)

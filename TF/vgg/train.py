@@ -5,11 +5,11 @@ from utils import pt_utils, plot_utils
 from dataset import BacteriaDataset
 from utils.train_utils import Trainer
 from torch.utils.data import DataLoader
-# from apex import amp
-
 
 # Hyperparameters etc.
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+SCALER = torch.cuda.amp.GradScaler()  # Uncomment this with you want to use GradScaler from Pytorch Amp
+# SCALER = None  # Uncomment this with you want to use NVIDIA Amp (better results so far)
 BATCH_SIZE = 8
 NUM_EPOCHS = 1000
 PATIENCE = 200
@@ -30,7 +30,7 @@ TRAIN_DIR = "/media/HD/datasets/bacteria_segmentation/train"
 VAL_DIR = "/media/HD/datasets/bacteria_segmentation/val"
 TEST_DIR = "/media/HD/datasets/bacteria_segmentation/test"
 BATCHES_PER_UPDATE = 8
-CLASS_WEIGHTS = [0.1, 0.55, 1] # [0.1, 0.4, 1]
+CLASS_WEIGHTS = [0.1, 0.55, 1]  # [0.1, 0.4, 1]
 CHECKPOINT_PATH = "/".join([WORKING_PATH, "checkpoints", "unet_vgg_test.pth"])
 
 
@@ -97,11 +97,12 @@ if __name__ == "__main__":
     model.init_params()
     model.to(DEVICE)
 
-    # Optimization hyperparameters
-    scaler = torch.cuda.amp.GradScaler()
     optimizer = get_optimizer(model)
     lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', patience=20, verbose=True)
-    # model, optimizer = amp.initialize(model, optimizer, opt_level='O0')
+
+    if SCALER is None:
+        from apex import amp
+        model, optimizer = amp.initialize(model, optimizer, opt_level='O0')
 
     if PLOT_DATA:
         plot_utils.plot_data(train_loader, 1, "TRAIN SAMPLE")
@@ -116,7 +117,7 @@ if __name__ == "__main__":
                       lr_scheduler=lr_scheduler,
                       device=DEVICE,
                       writer_path=WRITER_PATH,
-                      scaler=scaler)
+                      scaler=SCALER)
 
     for epoch in range(NUM_EPOCHS):
         print('\nEpoch %d starting...' % epoch)
