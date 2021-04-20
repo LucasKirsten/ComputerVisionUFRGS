@@ -1,3 +1,4 @@
+from tqdm import tqdm
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,58 +24,100 @@ def plot_images(left, right, disp, cmap=None):
     plt.show()
 
 
-@jit(nopython=True, parallel=True, cache=True)
-def __compute_costvolume_ssd(left_image, right_image, steps, window):
+@jit(nopython=False, parallel=True, cache=True)
+def __compute__ssd_gray(left_image, right_image, disparities, window):
     """
     Compute a cost volume with maximum disparity steps considering a neighbourhood window with Sum of Squared Differences (SSD)
 
         @param left_image:  left input image of size (H,W)
         @param right_image: right input image of size (H,W)
-        @param steps:       maximum disparity
+        @param disparities:       maximum disparity
         @param window:      radius of the filter
 
         @return:            cost volume of size (H,W,steps)
 
     """
     assert (left_image.shape == right_image.shape)
-    assert (steps > 0)
+    assert (len(left_image.shape) == 2)
+    assert (disparities > 0)
     assert (window > 0)
 
-    (H, W) = left_image.shape
-    cv = np.zeros((H, W, steps))
+    H, W = left_image.shape
+    deth_map = np.zeros((H, W, disparities))
 
     # Loop over internal image
-    for y in range(window, H - window):
-        for x in range(window, W - window):
-            # Loop over window
-            # v and u are the x,y of our local window search, used to ensure a good match
-            # by the squared differences of the neighbouring pixels
+    for row in range(window, H - window):
+        for col in range(window, W - window):
             for v in range(-window, window + 1):
                 for u in range(-window, window + 1):
+                    left = left_image[row + v, col + u]
                     # Loop over all possible disparities
-                    for d in range(0, steps):
-                        cv[y, x, d] += (left_image[y + v, x + u] - right_image[y + v, x + u - d]) ** 2
-    return cv
+                    for d in range(0, disparities):
+                        right = right_image[row + v, col + u - d]
+                        deth_map[row, col, d] += (int(left) - int(right)) ** 2
+    return deth_map
+
+
+@jit(nopython=False, parallel=True, cache=True)
+def __compute__ssd_rgb(left_image, right_image, disparities, window):
+    """
+    Compute a cost volume with maximum disparity steps considering a neighbourhood window with Sum of Squared Differences (SSD)
+
+        @param left_image:  left input image of size (H,W)
+        @param right_image: right input image of size (H,W)
+        @param disparities:       maximum disparity
+        @param window:      radius of the filter
+
+        @return:            cost volume of size (H,W,steps)
+
+    """
+    assert (left_image.shape == right_image.shape)
+    assert (len(left_image.shape) == 3)
+    assert (disparities > 0)
+    assert (window > 0)
+
+    H, W, C = left_image.shape
+    disp_map = np.zeros((H, W, C, disparities))
+
+    # Loop over internal image
+    for row in range(window, H - window):
+        for col in range(window, W - window):
+            # Loop over channels
+            for c in range(0, C):
+                # Loop over window
+                # v and u are the x,y of our local window search, used to ensure a good match
+                # by the squared differences of the neighbouring pixels
+                for v in range(-window, window + 1):
+                    for u in range(-window, window + 1):
+                        left = left_image[row + v, col + u, c]
+                        # Loop over all possible disparities
+                        for d in range(0, disparities):
+                            right = right_image[row + v, col + u - d, c]
+                            disp_map[row, col, c, d] += np.square(left - right)
+    return disp_map
 
 
 def get_min_disparity_ssd(l_img, r_img, d_steps, w_size):
-    return np.argmin(__compute_costvolume_ssd(l_img, r_img, d_steps, w_size), axis=-1)
+    if len(l_img.shape) > 2:
+        return np.mean(np.argmin(__compute__ssd_rgb(l_img, r_img, d_steps, w_size), axis=-1), axis=-1)
+    else:
+        return np.argmin(__compute__ssd_gray(l_img, r_img, d_steps, w_size), axis=-1)
 
 
 if __name__ == "__main__":
     left_img_path = "../data/Teddy/teddy-png-2/im2.png"
     right_img_path = "../data/Teddy/teddy-png-2/im6.png"
 
-    img_left = rgb2gray(imread(left_img_path))
-    img_right = rgb2gray(imread(right_img_path))
     max_disp_steps = 60  # maximum disparity to consider
-    window_size = 11  # size of the window to consider around the scan line point
-    disp_res = get_min_disparity_ssd(l_img=img_left,
+    window_size = 1  # size of the window to consider around the scan line point
+
+    img_left = imread(left_img_path)
+    img_right = imread(right_img_path)
+    disp_map = get_min_disparity_ssd(l_img=img_left,
                                      r_img=img_right,
                                      d_steps=max_disp_steps,
                                      w_size=window_size)
 
-    # plot_images(img_left, img_right, disp_res, 'gray')
-    plt.figure()
-    plt.imshow(disp_res, cmap='gray')
+    fig = plt.figure()
+    plt.imshow(disp_map, cmap='gray')
     plt.show()
