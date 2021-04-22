@@ -136,3 +136,7 @@ dmypy.json
 *.png
 
 /TF/data
+/TF/unet
+/TF/checkpoints
+/TF/board*
+/TP2/data/
