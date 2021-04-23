@@ -4,13 +4,36 @@ from numba import jit
 
 
 def get_min_disparity_ssd(l_img, r_img, d_steps, w_size, apply_dist=False, penalty=None):
+    """
+        Main method that calls the corresponding block matching algorithm to be used
+
+        Parameters
+        ----------
+        l_img : numpy.ndarray
+            left input image of size (H, W) or (H, W, C)
+        r_img : numpy.ndarray
+            right input image of size (H, W) or (H, W, C)
+        d_steps: int
+            maximum disparity number
+        w_size: int
+            radius of the filter (it will be a square window (window x window))
+        apply_dist : bool
+            flag used to select whether the optimized block matching algorithm or the standard one
+        penalty : int or float
+            numeric value used as a penalty to the distance metric
+
+        Returns
+        -------
+        disp_map : numpy.ndarray
+            the best depth map of size (H, W) based on the computed disparities
+
+        """
     if len(l_img.shape) > 2:
         if apply_dist:
             return np.mean(np.argmin(__compute_ssd_rgb_optim(left_image=l_img,
                                                              right_image=r_img,
                                                              disparities=d_steps,
                                                              window=w_size,
-                                                             apply_dist=apply_dist,
                                                              penalty=penalty), axis=-1), axis=-1)
         else:
             return np.mean(np.argmin(__compute_ssd_rgb(left_image=l_img,
@@ -23,7 +46,6 @@ def get_min_disparity_ssd(l_img, r_img, d_steps, w_size, apply_dist=False, penal
                                                       right_image=r_img,
                                                       disparities=d_steps,
                                                       window=w_size,
-                                                      apply_dist=apply_dist,
                                                       penalty=penalty), axis=-1)
         else:
             return np.argmin(__compute_ssd_gray(left_image=l_img,
@@ -38,12 +60,21 @@ def __compute_ssd_gray(left_image, right_image, disparities, window):
     Compute a cost volume with maximum disparity steps considering a
     neighbourhood window with Sum of Squared Differences (SSD)
 
-        @param left_image:  left input image of size (H,W)
-        @param right_image: right input image of size (H,W)
-        @param disparities:       maximum disparity
-        @param window:      radius of the filter
+    Parameters
+    ----------
+    left_image : numpy.ndarray
+        left input image of size (H, W)
+    right_image : numpy.ndarray
+        right input image of size (H, W)
+    disparities: int
+        maximum disparity number
+    window: int
+        radius of the filter (it will be a square window (window x window))
 
-        @return:            cost volume of size (H,W,steps)
+    Returns
+    -------
+    disp_map : numpy.ndarray
+        cost volume of size (H, W, disparities)
 
     """
     assert (left_image.shape == right_image.shape)
@@ -68,25 +99,36 @@ def __compute_ssd_gray(left_image, right_image, disparities, window):
 
 
 @jit(nopython=False, parallel=True, cache=True)
-def __compute_ssd_gray_optim(left_image, right_image, disparities, window, apply_dist, penalty):
+def __compute_ssd_gray_optim(left_image, right_image, disparities, window, penalty):
     """
     Compute a cost volume with maximum disparity steps considering a
-    neighbourhood window with Sum of Squared Differences (SSD)
+    neighbourhood window with a robust distance metric together with the
+    Sum of Squared Differences (SSD) calculation
 
-        @param left_image:  left input image of size (H,W)
-        @param right_image: right input image of size (H,W)
-        @param disparities:       maximum disparity
-        @param window:      radius of the filter
+    Parameters
+    ----------
+    left_image : numpy.ndarray
+        left input image of size (H, W)
+    right_image : numpy.ndarray
+        right input image of size (H, W)
+    disparities: int
+        maximum disparity number
+    window: int
+        radius of the filter (it will be a square window (window x window))
+    penalty : int or float
+        numeric value used as a penalty to the distance metric
 
-        @return:            cost volume of size (H,W,steps)
+    Returns
+    -------
+    disp_map : numpy.ndarray
+        cost volume of size (H, W, disparities)
 
     """
     assert (left_image.shape == right_image.shape)
     assert (len(left_image.shape) == 2)
     assert (disparities > 0)
     assert (window > 0)
-    if apply_dist:
-        assert (penalty is not None)
+    assert (penalty is not None)
 
     H, W = left_image.shape
     disp_map = np.zeros((H, W, disparities))
@@ -108,15 +150,24 @@ def __compute_ssd_gray_optim(left_image, right_image, disparities, window, apply
 @jit(nopython=False, parallel=True, cache=True)
 def __compute_ssd_rgb(left_image, right_image, disparities, window):
     """
-    Compute a cost volume with maximum disparity steps considering
-    a neighbourhood window with Sum of Squared Differences (SSD)
+    Compute a cost volume with maximum disparity steps considering a
+    neighbourhood window with Sum of Squared Differences (SSD)
 
-        @param left_image:  left input image of size (H,W)
-        @param right_image: right input image of size (H,W)
-        @param disparities: maximum disparity
-        @param window:      radius of the filter
+    Parameters
+    ----------
+    left_image : numpy.ndarray
+        left input image of size (H, W, C)
+    right_image : numpy.ndarray
+        right input image of size (H, W, C)
+    disparities: int
+        maximum disparity number
+    window: int
+        radius of the filter (it will be a square window (window x window))
 
-        @return:            cost volume of size (H,W,steps)
+    Returns
+    -------
+    disp_map : numpy.ndarray
+        cost volume of size (H, W, disparities, C)
 
     """
     assert (left_image.shape == right_image.shape)
@@ -146,25 +197,36 @@ def __compute_ssd_rgb(left_image, right_image, disparities, window):
 
 
 @jit(nopython=False, parallel=True, cache=True)
-def __compute_ssd_rgb_optim(left_image, right_image, disparities, window, apply_dist, penalty):
+def __compute_ssd_rgb_optim(left_image, right_image, disparities, window, penalty):
     """
-    Compute a cost volume with maximum disparity steps considering
-    a neighbourhood window with Sum of Squared Differences (SSD)
+    Compute a cost volume with maximum disparity steps considering a
+    neighbourhood window with a robust distance metric together with the
+    Sum of Squared Differences (SSD) calculation
 
-        @param left_image:  left input image of size (H,W)
-        @param right_image: right input image of size (H,W)
-        @param disparities: maximum disparity
-        @param window:      radius of the filter
+    Parameters
+    ----------
+    left_image : numpy.ndarray
+        left input image of size (H, W, C)
+    right_image : numpy.ndarray
+        right input image of size (H, W, C)
+    disparities: int
+        maximum disparity number
+    window: int
+        radius of the filter (it will be a square window (window x window))
+    penalty : int or float
+        numeric value used as a penalty to the distance metric
 
-        @return:            cost volume of size (H,W,steps)
+    Returns
+    -------
+    disp_map : numpy.ndarray
+        cost volume of size (H, W, disparities, C)
 
     """
     assert (left_image.shape == right_image.shape)
     assert (len(left_image.shape) == 3)
     assert (disparities > 0)
     assert (window > 0)
-    if apply_dist:
-        assert (penalty is not None)
+    assert (penalty is not None)
 
     H, W, C = left_image.shape
     disp_map = np.zeros((H, W, C, disparities))
@@ -189,7 +251,7 @@ def __compute_ssd_rgb_optim(left_image, right_image, disparities, window, apply_
 
 
 @jit(nopython=False, parallel=True, cache=True)
-def __compute_ssd_rgb_agg(left_image, right_image, disparities, window, apply_dist, penalty):
+def __compute_ssd_rgb_agg(left_image, right_image, disparities, window, penalty):
     """
     References:
         https://www.ipol.im/pub/art/2014/57/article_lr.pdf
@@ -201,8 +263,7 @@ def __compute_ssd_rgb_agg(left_image, right_image, disparities, window, apply_di
     assert (len(left_image.shape) == 3)
     assert (disparities > 0)
     assert (window > 0)
-    if apply_dist:
-        assert (penalty is not None)
+    assert (penalty is not None)
 
     H, W, C = left_image.shape
     disp_map = np.zeros((H, W, C, disparities))

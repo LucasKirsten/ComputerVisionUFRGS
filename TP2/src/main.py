@@ -4,6 +4,7 @@ from skimage.io import imread, imsave
 import tqdm
 from utils import plot_utils, block_matching
 
+
 if __name__ == "__main__":
     is_plot_images = False
     save_images = True
