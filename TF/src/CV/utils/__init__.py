@@ -10,11 +10,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from skimage.exposure import equalize_adapthist
 
-from feature_extractor import *
+from .feature_extractor import *
 
 def plot(x):
-    cv2.imshow('', x)
-    cv2.waitKey(300)
+    plt.imshow(x)
 
 def get_mask(path_mask, resize=(252,252)):
     
@@ -29,10 +28,12 @@ def get_mask(path_mask, resize=(252,252)):
 
 def show_ann(image, mask):
     
-    plt.figure()
+    plt.figure(figsize=(8,8))
     plt.imshow(image)
-    plt.imshow(mask[...,0], cmap='jet', alpha=0.3)
-    plt.imshow(mask[...,1], cmap='jet_r', alpha=0.3)
+    mask0 = cv2.merge([np.zeros_like(mask[...,0]), mask[...,0], np.zeros_like(mask[...,0])])
+    mask1 = cv2.merge([mask[...,1], np.zeros_like(mask[...,1]), np.zeros_like(mask[...,1])])
+    plt.imshow(mask0, cmap='jet', alpha=0.3)
+    plt.imshow(mask1, cmap='jet_r', alpha=0.3)
     
 def imread(path_img, resize=(252,252)):
     image = cv2.imread(path_img)[...,::-1]
