@@ -5,29 +5,29 @@ from numba import jit
 
 def get_min_disparity_ssd(l_img, r_img, d_steps, w_size, apply_dist=False, penalty=None):
     """
-        Main method that calls the corresponding block matching algorithm to be used
+    Main method that calls the corresponding block matching algorithm to be used
 
-        Parameters
-        ----------
-        l_img : numpy.ndarray
-            left input image of size (H, W) or (H, W, C)
-        r_img : numpy.ndarray
-            right input image of size (H, W) or (H, W, C)
-        d_steps: int
-            maximum disparity number
-        w_size: int
-            radius of the filter (it will be a square window (window x window))
-        apply_dist : bool
-            flag used to select whether the optimized block matching algorithm or the standard one
-        penalty : int or float
-            numeric value used as a penalty to the distance metric
+    Parameters
+    ----------
+    l_img : numpy.ndarray
+        left input image of size (H, W) or (H, W, C)
+    r_img : numpy.ndarray
+        right input image of size (H, W) or (H, W, C)
+    d_steps: int
+        maximum disparity number
+    w_size: int
+        radius of the filter (it will be a square window (window x window))
+    apply_dist : bool
+        flag used to select whether the optimized block matching algorithm or the standard one
+    penalty : int or float
+        numeric value used as a penalty to the distance metric
 
-        Returns
-        -------
-        disp_map : numpy.ndarray
-            the best depth map of size (H, W) based on the computed disparities
+    Returns
+    -------
+    disp_map : numpy.ndarray
+        the best depth map of size (H, W) based on the computed disparities
 
-        """
+    """
     if len(l_img.shape) > 2:
         if apply_dist:
             return np.mean(np.argmin(__compute_ssd_rgb_optim(left_image=l_img,
