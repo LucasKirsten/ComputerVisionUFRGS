@@ -42,10 +42,14 @@ def save_model_with_meta(file, model, optimizer, additional_info):
     torch.save(dict_to_save, file)
 
 
-def load_model_with_meta(modelClass, path, nClasses):
-    device_str = "cuda:0" if torch.cuda.is_available() else "cpu"
-    device = torch.device(device_str)
-    loaded_torch = torch.load(path, map_location=device_str)
+def load_model_with_meta(modelClass, path, nClasses, device_name=None):
+    if device_name is not None:
+        loaded_torch = torch.load(path, map_location=device_name)
+        device = torch.device(device_name)
+    else:
+        device_str = "cuda" if torch.cuda.is_available() else "cpu"
+        loaded_torch = torch.load(path, map_location=device_str)
+        device = torch.device(device_str)
 
     model = modelClass(nClasses)
 
@@ -53,6 +57,8 @@ def load_model_with_meta(modelClass, path, nClasses):
         model.load_state_dict(loaded_torch['model_state_dict'])
     else:
         model.load_state_dict(loaded_torch)
+
+    res = loaded_torch['additional_info']['resolution'] if loaded_torch['additional_info']['resolution'] is not None else None
 
     model.eval()
     model.to(device)
@@ -64,4 +70,4 @@ def load_model_with_meta(modelClass, path, nClasses):
                 continue
             print('%s: %s' % (key, item))
 
-    return model, device
+    return model, device, res
