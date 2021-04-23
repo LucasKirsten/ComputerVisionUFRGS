@@ -4,9 +4,10 @@ from skimage.io import imread, imsave
 import tqdm
 from utils import plot_utils, block_matching
 
+#%%
 if __name__ == "__main__":
-    is_plot_images = False
-    save_images = True
+    is_plot_images = True
+    save_images = False
     max_disp_steps = 50  # maximum disparity to consider
     # window_size = 10  # size of the window to consider around the scan line point
     # penalty = 50
@@ -19,11 +20,20 @@ if __name__ == "__main__":
     pl.Path(teddy_images_dir).mkdir(exist_ok=True, parents=True)
     pl.Path(cones_images_dir).mkdir(exist_ok=True, parents=True)
 
-    left_img_teddy_path = "../data/Teddy/teddy-png-2/im2.png"
-    right_img_teddy_path = "../data/Teddy/teddy-png-2/im6.png"
+    left_img_teddy_path = "./images/teddy/im2.png"
+    right_img_teddy_path = "./images/teddy/im6.png"
 
     img_teddy_left = imread(left_img_teddy_path)
     img_teddy_right = imread(right_img_teddy_path)
+    
+    left_img_cones_path = "./images/cones/im2.png"
+    right_img_cones_path = "./images/cones/im6.png"
+
+    img_cones_left = imread(left_img_cones_path)
+    img_cones_right = imread(right_img_cones_path)
+    
+    window_size = 1
+    penalty = 2
 
     for window_size in tqdm.tqdm(window_sizes):
         for idx, penalty in enumerate(penalties):
@@ -39,11 +49,6 @@ if __name__ == "__main__":
                                                                       apply_dist=True,
                                                                       penalty=penalty)
 
-            left_img_cones_path = "../data/Cones/cones-png-2/im2.png"
-            right_img_cones_path = "../data/Cones/cones-png-2/im6.png"
-
-            img_cones_left = imread(left_img_cones_path)
-            img_cones_right = imread(right_img_cones_path)
             cones_disp_map = block_matching.get_min_disparity_ssd(l_img=img_cones_left,
                                                                   r_img=img_cones_right,
                                                                   d_steps=max_disp_steps,
