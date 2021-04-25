@@ -2,9 +2,6 @@ from skimage.color import rgb2gray
 import matplotlib.pyplot as plt
 import matplotlib
 
-matplotlib.use('TkAgg')
-
-
 def plot_images(imageL, imageR, disp_map, disp_map_optim, penalty):
     fig = plt.figure()
     ax1 = fig.add_subplot(2, 2, 1)

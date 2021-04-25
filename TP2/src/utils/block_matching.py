@@ -5,27 +5,27 @@ from numba import jit
 def get_min_disparity_ssd(l_img, r_img, d_steps, w_size, apply_dist=False, penalty=None):
     if len(l_img.shape) > 2:
         if apply_dist:
-            return np.mean(np.argmin(__compute__ssd_rgb_optim(left_image=l_img,
+            return np.mean(np.min(__compute__ssd_rgb_optim(left_image=l_img,
                                                               right_image=r_img,
                                                               disparities=d_steps,
                                                               window=w_size,
                                                               apply_dist=apply_dist,
                                                               penalty=penalty), axis=-1), axis=-1)
         else:
-            return np.mean(np.argmin(__compute__ssd_rgb(left_image=l_img,
+            return np.mean(np.min(__compute__ssd_rgb(left_image=l_img,
                                                         right_image=r_img,
                                                         disparities=d_steps,
                                                         window=w_size), axis=-1), axis=-1)
     else:
         if apply_dist:
-            return np.argmin(__compute__ssd_gray_optim(left_image=l_img,
+            return np.min(__compute__ssd_gray_optim(left_image=l_img,
                                                        right_image=r_img,
                                                        disparities=d_steps,
                                                        window=w_size,
                                                        apply_dist=apply_dist,
                                                        penalty=penalty), axis=-1)
         else:
-            return np.argmin(__compute__ssd_gray(left_image=l_img,
+            return np.min(__compute__ssd_gray(left_image=l_img,
                                                  right_image=r_img,
                                                  disparities=d_steps,
                                                  window=w_size), axis=-1)
