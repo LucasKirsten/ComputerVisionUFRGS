@@ -4,7 +4,6 @@ from skimage.io import imread, imsave
 import tqdm
 from utils import plot_utils, block_matching
 
-
 if __name__ == "__main__":
     is_plot_images = False
     save_images = True
@@ -45,17 +44,17 @@ if __name__ == "__main__":
 
             img_cones_left = imread(left_img_cones_path)
             img_cones_right = imread(right_img_cones_path)
-            cones_disp_map = block_matching.get_min_disparity_ssd(l_img=img_cones_left,
+            cones_disp_map = block_matching.get_disparity_map(l_img=img_cones_left,
+                                                              r_img=img_cones_right,
+                                                              d_steps=max_disp_steps,
+                                                              w_size=window_size)
+
+            cones_disp_map_pen = block_matching.get_disparity_map(l_img=img_cones_left,
                                                                   r_img=img_cones_right,
                                                                   d_steps=max_disp_steps,
-                                                                  w_size=window_size)
-
-            cones_disp_map_pen = block_matching.get_min_disparity_ssd(l_img=img_cones_left,
-                                                                      r_img=img_cones_right,
-                                                                      d_steps=max_disp_steps,
-                                                                      w_size=window_size,
-                                                                      apply_dist=True,
-                                                                      penalty=penalty)
+                                                                  w_size=window_size,
+                                                                  apply_dist=True,
+                                                                  penalty=penalty)
 
             if is_plot_images:
                 plot_utils.plot_images(img_teddy_left, img_teddy_right, teddy_disp_map, teddy_disp_map_pen, penalty)
