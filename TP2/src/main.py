@@ -3,11 +3,9 @@ import pathlib as pl
 import numpy as np
 
 from skimage.io import imread
-import matplotlib.pyplot as plt
 
 from utils.block_matching import compute_ssd, compute_aggregation
 from utils.plot_utils import plot_images
-
 
 if __name__ == "__main__":
     max_disp_steps = 50  # maximum disparity to consider
@@ -45,7 +43,7 @@ if __name__ == "__main__":
                 imageR=right_img,
                 disp_map1=min_cost,
                 disp_map2=min_cost_mean_agg,
-                disp_map1_title=f"Default SSD with penalty of {penalty}",
+                disp_map1_title=f"SSD with penalty of {penalty}",
                 disp_map2_title=f"SSD + Mean Agg with penalty of {penalty}")
 
     # Computing Block Matching using SSD + Median Aggregation
@@ -58,7 +56,7 @@ if __name__ == "__main__":
                 imageR=right_img,
                 disp_map1=min_cost,
                 disp_map2=min_cost_median_agg,
-                disp_map1_title=f"Default SSD with penalty of {penalty}",
+                disp_map1_title=f"SSD with penalty of {penalty}",
                 disp_map2_title=f"SSD + Median Agg with penalty of {penalty}")
 
     plt.show()
