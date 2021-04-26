@@ -1,226 +1,99 @@
+import multiprocessing
+
+import cv2
 import numpy as np
-from numba import jit
+import tensorflow as tf
+from joblib import Parallel, delayed
+from sklearn.feature_extraction.image import extract_patches_2d
+
+NUM_CORES = multiprocessing.cpu_count()
 
 
-def get_min_disparity_ssd(l_img, r_img, d_steps, w_size, apply_dist=False, penalty=None):
-    if len(l_img.shape) > 2:
-        if apply_dist:
-            return np.mean(np.argmin(__compute__ssd_rgb_optim(left_image=l_img,
-                                                              right_image=r_img,
-                                                              disparities=d_steps,
-                                                              window=w_size,
-                                                              apply_dist=apply_dist,
-                                                              penalty=penalty), axis=-1), axis=-1)
-        else:
-            return np.mean(np.argmin(__compute__ssd_rgb(left_image=l_img,
-                                                        right_image=r_img,
-                                                        disparities=d_steps,
-                                                        window=w_size), axis=-1), axis=-1)
+def _ssd(disparity, patches_left, patches_right, apply_dist, penalty, shape):
+    penalty = tf.cast(penalty ** 2, 'float32')
+    patches_right = np.roll(patches_right, shift=disparity, axis=1)
+    patches_right[:, :disparity] = 0
+
+    diff_square = tf.square(patches_left - patches_right)
+    if apply_dist:
+        dist_metric = diff_square / (diff_square + penalty)
     else:
-        if apply_dist:
-            return np.argmin(__compute__ssd_gray_optim(left_image=l_img,
-                                                       right_image=r_img,
-                                                       disparities=d_steps,
-                                                       window=w_size,
-                                                       apply_dist=apply_dist,
-                                                       penalty=penalty), axis=-1)
-        else:
-            return np.argmin(__compute__ssd_gray(left_image=l_img,
-                                                 right_image=r_img,
-                                                 disparities=d_steps,
-                                                 window=w_size), axis=-1)
+        dist_metric = diff_square
+    costs = tf.reduce_sum(dist_metric, axis=(2, 3)).numpy()
+    return costs.reshape(shape)
 
 
-@jit(nopython=False, parallel=True, cache=True)
-def __compute__ssd_gray(left_image, right_image, disparities, window):
-    """
-    Compute a cost volume with maximum disparity steps considering a
-    neighbourhood window with Sum of Squared Differences (SSD)
-
-        @param left_image:  left input image of size (H,W)
-        @param right_image: right input image of size (H,W)
-        @param disparities:       maximum disparity
-        @param window:      radius of the filter
-
-        @return:            cost volume of size (H,W,steps)
-
-    """
+def compute_ssd(left_image, right_image, disparities, window_size,
+                apply_dist=False, penalty=0.000001):
     assert (left_image.shape == right_image.shape)
-    assert (len(left_image.shape) == 2)
+    assert (len(left_image.shape) > 2)
     assert (disparities > 0)
-    assert (window > 0)
-
-    H, W = left_image.shape
-    disp_map = np.zeros((H, W, disparities))
-
-    # Loop over internal image
-    for row in range(window, H - window):
-        for col in range(window, W - window):
-            for v in range(-window, window + 1):
-                for u in range(-window, window + 1):
-                    left = left_image[row + v, col + u]
-                    # Loop over all possible disparities
-                    for d in range(0, disparities):
-                        right = right_image[row + v, col + u - d]
-                        disp_map[row, col, d] += np.square(left - right)
-    return disp_map
-
-
-@jit(nopython=False, parallel=True, cache=True)
-def __compute__ssd_gray_optim(left_image, right_image, disparities, window, apply_dist, penalty):
-    """
-    Compute a cost volume with maximum disparity steps considering a
-    neighbourhood window with Sum of Squared Differences (SSD)
-
-        @param left_image:  left input image of size (H,W)
-        @param right_image: right input image of size (H,W)
-        @param disparities:       maximum disparity
-        @param window:      radius of the filter
-
-        @return:            cost volume of size (H,W,steps)
-
-    """
-    assert (left_image.shape == right_image.shape)
-    assert (len(left_image.shape) == 2)
-    assert (disparities > 0)
-    assert (window > 0)
+    assert (window_size > 0 and window_size % 2 != 0)
     if apply_dist:
-        assert (penalty is not None)
+        assert penalty > 0
 
-    H, W = left_image.shape
-    disp_map = np.zeros((H, W, disparities))
+    pad = window_size // 2
 
-    # Loop over internal image
-    for row in range(window, H - window):
-        for col in range(window, W - window):
-            for v in range(-window, window + 1):
-                for u in range(-window, window + 1):
-                    left = left_image[row + v, col + u]
-                    # Loop over all possible disparities
-                    for d in range(0, disparities):
-                        right = right_image[row + v, col + u - d]
-                        dist_metric = np.square(left - right) / (np.square(left - right) + np.square(penalty))
-                        disp_map[row, col, d] += dist_metric
-    return disp_map
+    padded = cv2.copyMakeBorder(left_image, pad, pad, pad, pad, cv2.BORDER_CONSTANT, None, 0)
+    patches_left = extract_patches_2d(padded, (window_size, window_size)).astype('float32')
+    patches_left = np.reshape(patches_left, (*left_image.shape[:2], *patches_left.shape[1:]))
 
+    padded = cv2.copyMakeBorder(right_image, pad, pad, pad, pad, cv2.BORDER_CONSTANT, None, 0)
+    patches_right = extract_patches_2d(padded, (window_size, window_size)).astype('float32')
+    patches_right = np.reshape(patches_right, (*right_image.shape[:2], *patches_right.shape[1:]))
 
-@jit(nopython=False, parallel=True, cache=True)
-def __compute__ssd_rgb(left_image, right_image, disparities, window):
-    """
-    Compute a cost volume with maximum disparity steps considering
-    a neighbourhood window with Sum of Squared Differences (SSD)
+    params = dict(
+        patches_left=patches_left,
+        patches_right=patches_right,
+        apply_dist=apply_dist,
+        penalty=penalty,
+        shape=left_image.shape
+    )
+    with Parallel(n_jobs=NUM_CORES, prefer="threads") as parallel:
+        costs = parallel(delayed(_ssd)(disparity=d, **params) for d in range(disparities))
 
-        @param left_image:  left input image of size (H,W)
-        @param right_image: right input image of size (H,W)
-        @param disparities: maximum disparity
-        @param window:      radius of the filter
-
-        @return:            cost volume of size (H,W,steps)
-
-    """
-    assert (left_image.shape == right_image.shape)
-    assert (len(left_image.shape) == 3)
-    assert (disparities > 0)
-    assert (window > 0)
-
-    H, W, C = left_image.shape
-    disp_map = np.zeros((H, W, C, disparities))
-
-    # Loop over internal image
-    for row in range(window, H - window):
-        for col in range(window, W - window):
-            # Loop over channels
-            for c in range(0, C):
-                # Loop over window
-                # v and u are the x,y of our local window search, used to ensure a good match
-                # by the squared differences of the neighbouring pixels
-                for v in range(-window, window + 1):
-                    for u in range(-window, window + 1):
-                        left = left_image[row + v, col + u, c]
-                        # Loop over all possible disparities
-                        for d in range(0, disparities):
-                            right = right_image[row + v, col + u - d, c]
-                            disp_map[row, col, c, d] += np.square(left - right)
-    return disp_map
+    return np.stack(costs, axis=-1)
 
 
-@jit(nopython=False, parallel=True, cache=True)
-def __compute__ssd_rgb_optim(left_image, right_image, disparities, window, apply_dist, penalty):
-    """
-    Compute a cost volume with maximum disparity steps considering
-    a neighbourhood window with Sum of Squared Differences (SSD)
+def __compute_aggregation(costs0, window_size, mode):
+    H, W, C, D = costs0.shape
 
-        @param left_image:  left input image of size (H,W)
-        @param right_image: right input image of size (H,W)
-        @param disparities: maximum disparity
-        @param window:      radius of the filter
+    costs = np.zeros_like(costs0)
 
-        @return:            cost volume of size (H,W,steps)
+    def __compute_y(y):
+        for x in range(W):
+            if mode == 'mean':
+                h = y - window_size
+                w = x - window_size
 
-    """
-    assert (left_image.shape == right_image.shape)
-    assert (len(left_image.shape) == 3)
-    assert (disparities > 0)
-    assert (window > 0)
-    if apply_dist:
-        assert (penalty is not None)
+                costh = 0 if h < 0 else costs0[h, x]
+                costw = 0 if w < 0 else costs0[y, w]
+                costhw = 0 if w < 0 and h < 0 else costs0[h, w]
 
-    H, W, C = left_image.shape
-    disp_map = np.zeros((H, W, C, disparities))
+                costs[y, x] = (costs0[y, x] - costh - costw + costhw) / window_size ** 2.
 
-    # Loop over internal image
-    for row in range(window, H - window):
-        for col in range(window, W - window):
-            # Loop over channels
-            for c in range(0, C):
-                # Loop over window
-                # v and u are the x,y of our local window search, used to ensure a good match
-                # by the squared differences of the neighbouring pixels
-                for v in range(-window, window + 1):
-                    for u in range(-window, window + 1):
-                        left = left_image[row + v, col + u, c]
-                        # Loop over all possible disparities
-                        for d in range(0, disparities):
-                            right = right_image[row + v, col + u - d, c]
-                            dist_metric = np.square(left - right) / (np.square(left - right) + np.square(penalty))
-                            disp_map[row, col, c, d] += dist_metric
-    return disp_map
+            else:
+                miny = max(0, y - window_size // 2)
+                maxy = min(H, y + window_size // 2)
+                minx = max(0, x - window_size // 2)
+                maxx = min(W, x + window_size // 2)
+
+                cost = costs0[miny:maxy, minx:maxx]
+                costs[y, x] = np.median(cost, axis=(0, 1))
+
+    with Parallel(n_jobs=NUM_CORES, prefer="threads") as parallel:
+        parallel(delayed(__compute_y)(y) for y in range(H))
+
+    return costs
 
 
-@jit(nopython=False, parallel=True, cache=True)
-def __compute__ssd_rgb_agg(left_image, right_image, disparities, window, apply_dist, penalty):
-    """
-    References:
-        https://www.csd.uwo.ca/~oveksler/Courses//Winter2016/CS4442_9542b/L11-CV-stereo.pdf
-        https://imagej.net/Integral_Image_Filters.html#Block_Matching_with_Integral_Images
-        https://www.ipol.im/pub/art/2014/57/article_lr.pdf
-        https://www.researchgate.net/profile/Alexander-Toet/publication/259658777_Speed-up_Template_Matching_through_Integral_Image_based_Weak_Classifiers/links/00b7d52d3b53510e13000000/Speed-up-Template-Matching-through-Integral-Image-based-Weak-Classifiers.pdf
+def compute_aggregation(costs0, window_size, mode='mean'):
+    assert mode in ('mean', 'median'), 'Invalid mode to compute costs with aggregation!'
+    assert window_size % 2 != 0, 'Window size should be an odd value!'
 
-    """
-    assert (left_image.shape == right_image.shape)
-    assert (len(left_image.shape) == 3)
-    assert (disparities > 0)
-    assert (window > 0)
-    if apply_dist:
-        assert (penalty is not None)
+    if mode == 'mean':
+        integral = np.stack([cv2.integral(costs0[..., i])[1:, 1:] for i in range(costs0.shape[-1])], axis=-1)
+        costs0 = np.copy(integral)
+    costs0 = np.float32(costs0)
 
-    H, W, C = left_image.shape
-    disp_map = np.zeros((H, W, C, disparities))
-
-    # Loop over internal image
-    # for row in range(window, H - window):
-    #     for col in range(window, W - window):
-    #         # Loop over channels
-    #         for c in range(0, C):
-    #             # Loop over window
-    #             # v and u are the x,y of our local window search, used to ensure a good match
-    #             # by the squared differences of the neighbouring pixels
-    #             for v in range(-window, window + 1):
-    #                 for u in range(-window, window + 1):
-    #                     left = left_image[row + v, col + u, c]
-    #                     # Loop over all possible disparities
-    #                     for d in range(0, disparities):
-    #                         right = right_image[row + v, col + u - d, c]
-    #                         dist_metric = np.square(left - right) / (np.square(left - right) + np.square(penalty))
-    #                         disp_map[row, col, c, d] += dist_metric
-    # return disp_map
+    return __compute_aggregation(costs0, window_size, mode)
