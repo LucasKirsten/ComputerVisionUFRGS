@@ -16,7 +16,7 @@ def _ssd(disparity, patches_left, patches_right, apply_dist, penalty, shape):
 
     diff_square = tf.square(patches_left - patches_right)
     if apply_dist:
-        dist_metric = diff_square / (diff_square + tf.square(penalty))
+        dist_metric = diff_square / (diff_square + penalty)
     else:
         dist_metric = diff_square
     costs = tf.reduce_sum(dist_metric, axis=(2, 3)).numpy()
