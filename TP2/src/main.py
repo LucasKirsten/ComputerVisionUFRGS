@@ -13,10 +13,10 @@ if __name__ == "__main__":
     apply_dist = True
     penalty = 100
 
-    # left_img_path = "../../data/Teddy/teddy-png-2/im2.png"
-    # right_img_path = "../../data/Teddy/teddy-png-2/im6.png"
-    left_img_path = "../../data/Cones/cones-png-2/im2.png"
-    right_img_path = "../../data/Cones/cones-png-2/im6.png"
+    # left_img_path = "../data/Teddy/teddy-png-2/im2.png"
+    # right_img_path = "../data/Teddy/teddy-png-2/im6.png"
+    left_img_path = "../data/Cones/cones-png-2/im2.png"
+    right_img_path = "../data/Cones/cones-png-2/im6.png"
 
     left_img = imread(left_img_path)
     right_img = imread(right_img_path)
