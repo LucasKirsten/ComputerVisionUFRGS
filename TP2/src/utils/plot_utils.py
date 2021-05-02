@@ -3,6 +3,10 @@ from skimage.color import rgb2gray
 
 
 def plot_images(imageL, imageR, disp_map1, disp_map2=None, disp_map1_title=None, disp_map2_title=None):
+    '''
+    Function used to plot the results.
+    '''
+    
     fig = plt.figure(figsize=(15, 15))
     if disp_map2 is not None:
         ax1 = fig.add_subplot(2, 2, 1)
