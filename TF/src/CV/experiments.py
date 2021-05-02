@@ -41,32 +41,31 @@ path_masks  = sorted(glob(os.path.join(folder_masks, '*.png')))
 
 #%%
 
-features, labels = [],[]
-def get_features_labels(pi, pm):
-    
-    image = imread(pi)
-    mask  = get_mask(pm)
-    
-    y_true = list(cv2.split(mask))
-    y_pred = list(get_mask_proposal(image))
-    
-    f,l = get_feats_labels(image, y_true[0], 1)
-    features.extend(f); labels.extend(l)
-    f,l = get_feats_labels(image, y_true[1], 2)
-    features.extend(f); labels.extend(l)
-    
-    # background
-    background = y_pred[1].astype('float') - y_true[1].astype('float')
-    background[background<0] = 0
-    f,l = get_feats_labels(image, background.astype('uint8'), 0)
-    features.extend(f); labels.extend(l)
-    
-with Parallel(n_jobs=NUM_CORES, prefer="threads") as parallel:
-    _ = parallel(delayed(get_features_labels)(pi,pm) \
-                      for pi, pm in tqdm(zip(path_images, path_masks), total=len(path_images)))
-    
-features = np.array(features)
-labels = np.array(labels)
+def get_features_labels(dataset):
+    features, labels = [],[]
+    def _get_features_labels(pi, pm):
+
+        image = imread(pi)
+        mask  = get_mask(pm)
+
+        y_true = list(cv2.split(mask))
+        y_pred = list(get_mask_proposal(image))
+
+        f,l = get_feats_labels(image, y_true[0], 1)
+        features.extend(f); labels.extend(l)
+        f,l = get_feats_labels(image, y_true[1], 2)
+        features.extend(f); labels.extend(l)
+
+        # background
+        background = y_pred[1].astype('float') - y_true[1].astype('float')
+        background[background<0] = 0
+        f,l = get_feats_labels(image, background.astype('uint8'), 0)
+        features.extend(f); labels.extend(l)
+
+    with Parallel(n_jobs=NUM_CORES, prefer="threads") as parallel:
+        _ = parallel(delayed(_get_features_labels)(dataset[i]) for i in tqdm(range(dataset)))
+        
+    return np.array(features), np.array(labels)
     
 #%%
 

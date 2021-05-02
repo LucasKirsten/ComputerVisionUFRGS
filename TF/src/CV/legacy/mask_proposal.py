@@ -49,8 +49,8 @@ def get_mask_proposal(image):
     lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)[...,0]
     blur = equalize_adapthist(lab, clip_limit=0.01)
     blur = np.uint8(blur*255)
-    #th = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-    th = cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,51,0)
+    th = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    #th = cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,51,0)
     
     # remove noises
     contour = cv2.findContours(th,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
@@ -142,12 +142,6 @@ def predict_masks(image, clf):
                 _ = cv2.drawContours(ery_pred, [cnt], 0, (255,255,255), -1)
             elif cp==2:
                 _ = cv2.drawContours(spi_pred, [cnt], 0, (255,255,255), -1)
-                
-                
-    # fill ery masks
-    contour = cv2.findContours(ery_pred, cv2.RETR_CCOMP,cv2.CHAIN_APPROX_SIMPLE)[1]
-    for cnt in contour:
-        _ = cv2.drawContours(ery_pred, [cnt], 0, (255,255,255), -1)
     
     return ery_pred, spi_pred
 

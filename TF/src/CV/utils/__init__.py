@@ -5,10 +5,12 @@ Created on Sat Apr 10 20:33:49 2021
 @author: kirstenl
 """
 
+import os
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage.exposure import equalize_adapthist
+from tqdm import tqdm
 
 from .feature_extractor import *
 
@@ -18,6 +20,7 @@ def plot(x):
 def get_mask(path_mask, resize=(252,252)):
     
     mask = cv2.imread(path_mask)[...,0]
+    
     ery = np.where(mask==1, 255, 0).astype('uint8')
     spi = np.where(mask==2, 255, 0).astype('uint8')
     
@@ -28,7 +31,11 @@ def get_mask(path_mask, resize=(252,252)):
 
 def show_ann(image, mask):
     
-    plt.figure(figsize=(8,8))
+    plt.figure(figsize=(15,10))
+    plt.subplot(121)
+    plt.imshow(image)
+    
+    plt.subplot(122)
     plt.imshow(image)
     mask0 = cv2.merge([np.zeros_like(mask[...,0]), mask[...,0], np.zeros_like(mask[...,0])])
     mask1 = cv2.merge([mask[...,1], np.zeros_like(mask[...,1]), np.zeros_like(mask[...,1])])
@@ -163,3 +170,43 @@ def features_labels_fromclusters(image, mask_true, segments):
         labels.append(label)
 
     return features, labels
+
+class DataLoader():
+    def __init__(self, path_root):
+        
+        train_images = open(os.path.join(path_root,'train/train_images.txt'), 'r').read().split('\n')
+        val_images = open(os.path.join(path_root,'val/val_images.txt'), 'r').read().split('\n')
+        test_images = open(os.path.join(path_root,'test/test_images.txt'), 'r').read().split('\n')
+
+        train_images = np.concatenate([train_images, val_images], axis=-1)
+        
+        train_images = [os.path.join(path_root,p) for p in train_images]
+        test_images = [os.path.join(path_root,p) for p in test_images]
+        
+        print('Loading train data...')
+        self.train_data = []
+        for path_img in tqdm(train_images):
+            image = imread(path_img)
+            masks = get_mask(path_img.replace('images','masks'))
+            
+            self.train_data.append([image, masks])
+        
+        print('Loading test data...')
+        self.test_data = []
+        for path_img in tqdm(test_images):
+            image = imread(path_img)
+            masks = get_mask(path_img.replace('images','masks'))
+            
+            self.test_data.append([image, masks])
+            
+    def set_data(self, data):
+        if data=='train':
+            self.data = self.train_data
+        else:
+            self.data = self.test_data
+            
+    def __len__(self):
+        return len(self.data)
+    
+    def __getitem__(self, i):
+        return self.data[i]
