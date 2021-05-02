@@ -1,7 +1,7 @@
 from time import time
-import pathlib as pl
 import numpy as np
 
+import matplotlib.pyplot as plt
 from skimage.io import imread
 
 from utils.block_matching import compute_ssd, compute_aggregation
