@@ -40,17 +40,19 @@ class DataLoader():
 
         """
         
+        self.path_root = path_root
+        
         # get annotations
         train_images = open(os.path.join(path_root,'train/train_images.txt'), 'r').read().split('\n')
-        val_images = open(os.path.join(path_root,'val/val_images.txt'), 'r').read().split('\n')
-        test_images = open(os.path.join(path_root,'test/test_images.txt'), 'r').read().split('\n')
+        val_images   = open(os.path.join(path_root,'val/val_images.txt'), 'r').read().split('\n')
+        test_images  = open(os.path.join(path_root,'test/test_images.txt'), 'r').read().split('\n')
         
         # join training and validation
         train_images = np.concatenate([train_images, val_images], axis=-1)
         
         # defines full path
         train_images = [os.path.join(path_root,p) for p in train_images]
-        test_images = [os.path.join(path_root,p) for p in test_images]
+        test_images  = [os.path.join(path_root,p) for p in test_images]
         
         # read all training images
         print('Loading train data...')
@@ -90,3 +92,11 @@ class DataLoader():
     
     def __getitem__(self, i):
         return self.data[i]
+    
+    def get_by_name(self, name):
+        path_img = os.path.join(self.path_root, 'images', name+'.png')
+        
+        image = imread(path_img)
+        masks = get_mask(path_img.replace('images','masks'))
+        
+        return image, masks
