@@ -140,3 +140,6 @@ dmypy.json
 /TF/checkpoints
 /TF/board*
 /TP2/data/
+/TF/deep_learning/presentation_data/
+/TF/deep_learning/src/board*
+/TF/deep_learning/src/checkpoints/
