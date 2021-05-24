@@ -16,7 +16,7 @@ We developed a pipeline in which the steps taken by the approach are mainly deri
 - Feature extraction (using HOG);
 - Supervised Learning (with Support Vector Machine, i.e. SVC)
 
-To use this methods, just open the Jupyter Notebook ```source.ipynb``` available in the ```TF/computer_vision``` folder.
+First, you need to build all solution (i.e. train the SVC model) by running the Jupyter Notebook ```_pipeline.ipynb``` available at ```TF/computer_vision/segment_cell```. For visualizing each step of the solution, open the Jupyter Notebook ```source.ipynb``` available in the ```TF/computer_vision``` folder.
 
 ### Deep Learning
 - This Part of the TF was developed using the Pytorch framework.
